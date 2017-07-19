@@ -12,6 +12,7 @@ r <- 75 # circle radius
 k <- 4 # max neighbours
 X <- 10000 # canvas width
 Y <- 10000 # canvas height
+rectilinear <- TRUE
 
 max_checked <- 10 # maximum times checked
 
@@ -27,7 +28,11 @@ while (i <= n) {
     random_point <- sample_n(points[seq(1:i-1), ] %>%
                                filter(neighbours <= k, times_checked <= max_checked) %>%
                                top_n(max(floor(nrow(.) / 2), 10), times_checked), 1) # Pick a point at random
-    alpha <- runif(1, -2 * pi, 2 * pi) # Pick a random direction
+    if(rectilinear) {
+      alpha <- sample(c(0, pi/2, pi, 3*pi/2), 1)
+    } else {
+      alpha <- runif(1, -2 * pi, 2 * pi) # Pick a random direction
+    }
     v <- c(cos(alpha), sin(alpha)) * r # Create directional vector
     xj <- random_point$x[1] + v[1]
     yj <- random_point$y[1] + v[2]
@@ -53,27 +58,28 @@ while (i <= n) {
 delta <- 50
 edges2 <- edges %>%
   rowwise() %>%
-  mutate(x = x + runif(1, -delta, delta),
+  mutate(#x = x + runif(1, -delta, delta),
          y = y + runif(1, -delta, delta),
-         xend = xend + runif(1, -delta, delta),
+         #xend = xend + runif(1, -delta, delta),
          yend = yend + runif(1, -delta, delta))
 
 df <- list(edges, edges2)
 
 tf <- tween_states(df, tweenlength = 2, statelength = 1,
-                   ease = "linear",
+                   ease = "exponential-out",
                    nframes = 500)
 
 # Make plot ----
 p <- ggplot() +
   geom_segment(aes(x, y, xend = xend, yend = yend),
-               edges %>% filter(x != xend), lineend = "round", size = 0.9, alpha = 1) +
+               #tf %>% filter(x != xend), lineend = "round", size = 0.05, alpha = 0.05) +
+               edges, lineend = "round", size = 1, alpha = 1) +
   coord_equal() +
   xlim(-5000, 5000) +
   ylim(-5000, 5000) +
   theme_blankcanvas(margin_cm = 0)
 
 #Save plot ----
-ggsave("plots/plot009.png", width = 20, height = 20, units = "in", dpi = 300)
- saveRDS(edges, "edges-3.RDS")
-# edges <- readRDS("edges.RDS")
+ggsave("plots/plot017.png", width = 20, height = 20, units = "in", dpi = 300)
+# saveRDS(edges, "edges-rectilinear.RDS")
+# edges <- readRDS("edges-rectilinear.RDS")
