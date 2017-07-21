@@ -4,24 +4,25 @@ library(tidyverse)
 library(tweenr)
 
 # Make reproducible ----
-set.seed(10000)
+set.seed(1000)
 
 # Parameters ----
-n <- 100000000000 # number of points
+n <- 10000000000000000 # number of points
 r <- 75 # circle radius
-k <- 4 # max neighbours
+k <- 100 # max neighbours
 X <- 10000 # canvas width
 Y <- 10000 # canvas height
-rectilinear <- TRUE
+rectilinear <- FALSE
+alpha <- 0
 
 max_checked <- 10 # maximum times checked
 
 # Setup
 points <- data.frame(x = numeric(10), y = numeric(10), neighbours = integer(10), times_checked = integer(10))
 edges <- data.frame(x = numeric(10), y = numeric(10), xend = numeric(10), yend = numeric(10))
-
+#points <- points %>% rowwise() %>% mutate(x = runif(1, -X, X), y = runif(1, -Y, Y))
 # Main loop ----
-i <- 1
+i <- 11
 while (i <= n) {
   valid <- FALSE
   while (!valid) {
@@ -31,7 +32,10 @@ while (i <= n) {
     if(rectilinear) {
       alpha <- sample(c(0, pi/2, pi, 3*pi/2), 1)
     } else {
-      alpha <- runif(1, -2 * pi, 2 * pi) # Pick a random direction
+      #alpha <- runif(1, -2 * pi, 2 * pi) # Pick a random direction
+      #alpha <- alpha + 30 * pi / 180
+      alpha <- sample(c(0, pi/4, pi/2, 3*pi/4, pi, 5*pi/4, 3*pi/2, 7*pi/4), 1)
+      #alpha <- sample(c(0, 3*pi/4, pi), 1)
     }
     v <- c(cos(alpha), sin(alpha)) * r # Create directional vector
     xj <- random_point$x[1] + v[1]
@@ -55,7 +59,7 @@ while (i <= n) {
   print(i)
 }
 
-delta <- 50
+delta <- 100
 edges2 <- edges %>%
   rowwise() %>%
   mutate(#x = x + runif(1, -delta, delta),
@@ -63,23 +67,31 @@ edges2 <- edges %>%
          #xend = xend + runif(1, -delta, delta),
          yend = yend + runif(1, -delta, delta))
 
+edges3 <- edges %>%
+  rowwise() %>%
+  mutate(x = x + runif(1, -delta, delta),
+    #y = y + runif(1, -delta, delta),
+    xend = xend + runif(1, -delta, delta))
+    #yend = yend + runif(1, -delta, delta))
+
 df <- list(edges, edges2)
 
 tf <- tween_states(df, tweenlength = 2, statelength = 1,
                    ease = "exponential-out",
-                   nframes = 500)
+                   nframes = 100)
 
 # Make plot ----
 p <- ggplot() +
   geom_segment(aes(x, y, xend = xend, yend = yend),
-               #tf %>% filter(x != xend), lineend = "round", size = 0.05, alpha = 0.05) +
                edges, lineend = "round", size = 1, alpha = 1) +
+               #tf, lineend = "round", size = 0.15, alpha = 0.15) +
   coord_equal() +
   xlim(-5000, 5000) +
   ylim(-5000, 5000) +
   theme_blankcanvas(margin_cm = 0)
 
 #Save plot ----
-ggsave("plots/plot017.png", width = 20, height = 20, units = "in", dpi = 300)
+ggsave("plots/plot018.png", width = 20, height = 20, units = "in", dpi = 300)
 # saveRDS(edges, "edges-rectilinear.RDS")
 # edges <- readRDS("edges-rectilinear.RDS")
+# edges <- readRDS("edges-3.RDS")
